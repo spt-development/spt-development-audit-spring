@@ -1,0 +1,23 @@
+<FindBugsFilter>
+    <!-- There is no recommendation either way any more between static and instance variables:
+         https://www.slf4j.org/faq.html#declared_static, so in general static is fine as is generally the approach
+         people take.
+      -->
+    <Match>
+        <Bug pattern="SLF4J_LOGGER_SHOULD_BE_NON_STATIC" />
+    </Match>
+
+    <!-- Resolved by replacing \r\n through log message config - see application.yml -->
+    <Match>
+        <Bug pattern="CRLF_INJECTION_LOGS" />
+    </Match>
+
+    <!--
+         We have to use the headers to get the originating client IP. Granted it is not perfect, but I am not aware of
+         an alternative choice.
+      -->
+    <Match>
+        <Class name="com.spt.development.audit.spring.util.HttpRequestUtils" />
+        <Bug pattern="SERVLET_HEADER" />
+    </Match>
+</FindBugsFilter>
