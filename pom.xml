@@ -4,7 +4,7 @@
 
     <groupId>com.spt-development</groupId>
     <artifactId>spt-development-audit-spring</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>audit-spring</name>
     <description>Adds auditing to your project through the use of annotations typically added to Service methods.</description>
@@ -156,6 +156,7 @@
             <groupId>org.springframework.security.oauth</groupId>
             <artifactId>spring-security-oauth2</artifactId>
             <version>${spring-security-oauth.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- SPT dependencies -->
@@ -428,6 +429,30 @@
                                             <minimum>1.0</minimum>
                                         </limit>
                                     </limits>
+                                    <excludes>
+                                        <!--
+                                             Any classes / packages excluded here, must have specific rules for them below,
+                                             with reasons.
+                                          -->
+                                        <exclude>com.spt.development.audit.spring.security.AuthenticationAdapterFactory</exclude>
+                                    </excludes>
+                                </rule>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.82</minimum>
+                                        </limit>
+                                    </limits>
+                                    <includes>
+                                        <!--
+                                             Difficult to force the ClassNotFoundException when checking if authentication
+                                             object is an instance of OAuth2Authentication
+                                          -->
+                                        <include>com.spt.development.audit.spring.security.AuthenticationAdapterFactory</include>
+                                    </includes>
                                 </rule>
                             </rules>
                         </configuration>
@@ -447,6 +472,9 @@
                 </dependencies>
                 <configuration>
                     <mutationThreshold>100</mutationThreshold>
+                    <excludedClasses>
+                        <param>com.spt.development.audit.spring.security.AuthenticationAdapterFactory</param>
+                    </excludedClasses>
                 </configuration>
             </plugin>
             <plugin>

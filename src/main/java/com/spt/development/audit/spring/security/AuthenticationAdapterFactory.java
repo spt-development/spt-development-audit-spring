@@ -19,8 +19,8 @@ import java.util.function.Function;
  * </ul>
  */
 public class AuthenticationAdapterFactory {
-    private Function<UsernamePasswordAuthenticationToken, AuthenticationAdapter> usernamePasswordFactory;
-    private Function<OAuth2Authentication, AuthenticationAdapter> oauth2Factory;
+    private Function<Authentication, AuthenticationAdapter> usernamePasswordFactory;
+    private Function<Authentication, AuthenticationAdapter> oauth2Factory;
 
     /**
      * Creates a new instance of the factory.
@@ -41,7 +41,7 @@ public class AuthenticationAdapterFactory {
      * @return <code>this</code> to provide a fluent interface.
      */
     public AuthenticationAdapterFactory withUsernamePasswordFactory(
-            Function<UsernamePasswordAuthenticationToken, AuthenticationAdapter> usernamePasswordFactory) {
+            Function<Authentication, AuthenticationAdapter> usernamePasswordFactory) {
 
         this.usernamePasswordFactory = usernamePasswordFactory;
         return this;
@@ -56,7 +56,7 @@ public class AuthenticationAdapterFactory {
      *
      * @return <code>this</code> to provide a fluent interface.
      */
-    public AuthenticationAdapterFactory withOauth2Factory(Function<OAuth2Authentication, AuthenticationAdapter> oauth2Factory) {
+    public AuthenticationAdapterFactory withOauth2Factory(Function<Authentication, AuthenticationAdapter> oauth2Factory) {
         this.oauth2Factory = oauth2Factory;
         return this;
     }
@@ -71,17 +71,41 @@ public class AuthenticationAdapterFactory {
     }
 
     private AuthenticationAdapter createAdapter(Authentication authentication) {
-        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+        if (isAnonymousAuthentication(authentication)) {
             return new AnonymousAuthenticationAdapter();
         }
-        else if (authentication instanceof OAuth2Authentication) {
-            return oauth2Factory.apply((OAuth2Authentication) authentication);
+
+        if (isUsernamePasswordAuthentication(authentication)) {
+            return usernamePasswordFactory.apply(authentication);
         }
-        else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-            return usernamePasswordFactory.apply((UsernamePasswordAuthenticationToken) authentication);
+
+        if (isOAuth2Authentication(authentication)) {
+            return oauth2Factory.apply(authentication);
         }
         throw new UnsupportedOperationException(
                 "Only anonymous users, users authenticated via OAuth2 or simple username/password authentication are currently supported"
         );
+    }
+
+    private boolean isAnonymousAuthentication(Authentication authentication) {
+        return authentication == null || authentication instanceof AnonymousAuthenticationToken;
+    }
+
+    private boolean isUsernamePasswordAuthentication(Authentication authentication) {
+        return authentication instanceof UsernamePasswordAuthenticationToken;
+    }
+
+    private boolean isOAuth2Authentication(Authentication authentication) {
+        try {
+            return authentication instanceof OAuth2Authentication;
+        }
+        catch (Exception ex) {
+            if (ex instanceof ClassNotFoundException) {
+                // If The OAuth2 class is not on the class path, then it *can't* be OAuth2 authentication - this is
+                // possible becayse spring-security-oauth2 is marked as an optional dependency in the pom.
+                return false;
+            }
+            throw ex;
+        }
     }
 }

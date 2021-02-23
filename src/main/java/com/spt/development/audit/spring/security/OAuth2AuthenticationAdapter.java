@@ -3,9 +3,9 @@ package com.spt.development.audit.spring.security;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 
@@ -19,13 +19,23 @@ import java.util.stream.Collectors;
  * An {@link AuthenticationAdapter} used when the current user has been authenticated with OAuth2. See
  * {@link OAuth2Authentication}.
  */
-@AllArgsConstructor
 public class OAuth2AuthenticationAdapter implements AuthenticationAdapter {
     private static final Gson GSON = new GsonBuilder().create();
 
     private static final char TOKEN_ELEMENT_DELIM = '.';
 
     private final OAuth2Authentication authentication;
+
+    /**
+     * Creates a new instance of {@link OAuth2AuthenticationAdapter} that wraps a {@link OAuth2Authentication} object.
+     *
+     * @param authentication an {@link Authentication} object that is expected to be of type {@link OAuth2Authentication}.
+     */
+    public OAuth2AuthenticationAdapter(Authentication authentication) {
+        assert authentication instanceof OAuth2Authentication;
+
+        this.authentication = (OAuth2Authentication) authentication;
+    }
 
     /**
      * Parses the OAuth2 token an retrieves the token attribute identified by the key.
