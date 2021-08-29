@@ -4,7 +4,7 @@
 
     <groupId>com.spt-development</groupId>
     <artifactId>spt-development-audit-spring</artifactId>
-    <version>1.0.1</version>
+    <version>2.0.0</version>
 
     <name>audit-spring</name>
     <description>Adds auditing to your project through the use of annotations typically added to Service methods.</description>
@@ -29,8 +29,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <maven.compiler.source>15</maven.compiler.source>
-        <maven.compiler.target>15</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
 
         <!-- Dependency versions -->
         <aspectj.version>1.9.6</aspectj.version>
@@ -45,13 +45,13 @@
         <spring-boot.version>2.4.1</spring-boot.version>
         <spring-security.version>5.4.2</spring-security.version>
         <spring-security-oauth.version>2.3.7.RELEASE</spring-security-oauth.version>
-        <spt-cid.version>1.1.0</spt-cid.version>
+        <spt-cid.version>2.0.0</spt-cid.version>
 
         <!-- Test dependency versions -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
         <mockito.version>3.6.28</mockito.version>
-        <spt-test.version>1.0.0</spt-test.version>
+        <spt-test.version>2.0.0</spt-test.version>
 
         <!-- Plugin versions -->
         <checkstyle.version>8.39</checkstyle.version>
