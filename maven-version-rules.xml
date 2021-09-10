@@ -12,5 +12,28 @@
     </ignoreVersions>
 
     <rules>
+        <!-- Dependencies aligned with Spring Boot -->
+        <rule groupId="com.google.code.gson" artifactId="gson" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+        <rule groupId="jakarta.jms" artifactId="jakarta.jms-api" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+        <rule groupId="jakarta.servlet" artifactId="jakarta.servlet-api" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+
+        <!-- Test dependencies aligned with Spring Boot -->
+        <rule groupId="org.mockito" artifactId="mockito-core" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
     </rules>
 </ruleset>

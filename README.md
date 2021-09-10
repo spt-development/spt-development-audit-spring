@@ -61,22 +61,20 @@ The `Slf4jAuditEventWriter` simply logs the audit events with SLF4j which for pr
 useful and should be replaced either with `JmsAuditEventWriter` or a custom implementation of `AuditEventWriter` that
 writes the audit events to a database for instance.
 
-The `AuthenticationAdapterFactory` is used by the `Auditor` aspect to retrieve details about the currently logged in
-user. Anonymous, OAuth2 and basic username/password authentication are supported. It may be necessary to customize
-how the user details are retrieved - the default implementation for OAuth2 returns `null` for the user ID for instance - 
-this is possible by providing custom factories for creating the adapters, for example:
+The `AuthenticationAdapterFactory` is used by the `Auditor` aspect to retrieve details about the currently logged-in
+user. Anonymous, and basic username/password authentication are supported by the `DefaultAuthenticationAdapterFactory`
+implementation. If using the default implementation, it may be necessary to customize how the user details are 
+retrieved - the default implementation for username/password returns `null` for the user ID for instance - this is 
+possible by providing custom factories for creating the adapters, for example:
 
     @Bean
     public AuthenticationAdapterFactory authenticationAdapterFactory() {
-        return new AuthenticationAdapterFactory()
-                .withUsernamePasswordFactory(auth -> new MyAuthenticationAdapter((MyPrincipal)auth.getPrincipal()))
-                .withOauth2Factory(auth -> new OAuth2AuthenticationAdapter(auth) {
-                    @Override
-                    public String getUserId() {
-                        return super.getUserAttribute(true, "uid");
-                    }
-                });
+        return new DefaultAuthenticationAdapterFactory()
+                .withUsernamePasswordFactory(auth -> new MyAuthenticationAdapter((MyPrincipal)auth.getPrincipal()));
     }
+
+For other types of authentication such as OAuth2, it will be necessary to implement a custom 
+`AuthenticationAdapterFactory`.
 
 Auditing methods
 ----------------

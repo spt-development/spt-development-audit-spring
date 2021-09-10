@@ -2,12 +2,17 @@ package com.spt.development.audit.spring;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 
 import java.time.OffsetDateTime;
+
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 /**
  * Class to encapsulate the audit events generated.
@@ -16,7 +21,18 @@ import java.time.OffsetDateTime;
 @Builder(toBuilder = true)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuditEvent {
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(
+                    OffsetDateTime.class,
+                    (JsonSerializer<OffsetDateTime>) (src, typeOfSrc, context) ->
+                            new JsonPrimitive(ISO_OFFSET_DATE_TIME.format(src))
+            )
+            .registerTypeAdapter(
+                    OffsetDateTime.class,
+                    (JsonDeserializer<OffsetDateTime>) (json, typeOfT, context) ->
+                            ISO_OFFSET_DATE_TIME.parse(json.getAsString(), OffsetDateTime::from)
+            )
+            .create();
 
     private String type;
     private String subType;

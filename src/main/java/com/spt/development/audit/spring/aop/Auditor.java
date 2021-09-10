@@ -50,7 +50,7 @@ public class Auditor {
      * @param appName the name of the application that the auditing is for.
      * @param appVersion the version of the application that the auditing is for.
      * @param auditEventWriter the audit event writer that writes the audit logs.
-     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieved details about the
+     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
      *                                     currently authenticated user.
      */
     public Auditor(
@@ -68,7 +68,7 @@ public class Auditor {
      * @param appVersion the version of the application that the auditing is for.
      * @param localhostFacade a facade used to retrieve the hostname of the machine the application is running on.
      * @param auditEventWriter the audit event writer that writes the audit logs.
-     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieved details about the
+     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
      *                                     currently authenticated user.
      */
     Auditor(
