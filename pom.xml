@@ -32,31 +32,31 @@
         <maven.compiler.release>8</maven.compiler.release>
 
         <!-- Dependency versions -->
-        <aspectj.version>1.9.9.1</aspectj.version>
+        <aspectj.version>1.9.7</aspectj.version>
         <commons-collections.version>4.4</commons-collections.version>
         <commons-lang.version>3.12.0</commons-lang.version>
-        <gson.version>2.8.9</gson.version>
+        <gson.version>2.9.0</gson.version>
         <jakarta-jms.version>2.0.3</jakarta-jms.version>
         <jakarta-servlet.version>4.0.4</jakarta-servlet.version>
         <lombok.version>1.18.24</lombok.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <spring.version>5.3.19</spring.version>
-        <spring-security.version>5.6.3</spring-security.version>
+        <spring.version>5.3.20</spring.version>
+        <spring-security.version>5.7.1</spring-security.version>
         <spt-cid.version>2.0.11</spt-cid.version>
 
         <!-- Test dependency versions -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
-        <mockito.version>4.0.0</mockito.version>
-        <spt-test.version>2.0.4</spt-test.version>
+        <mockito.version>4.5.1</mockito.version>
+        <spt-test.version>2.0.5</spt-test.version>
 
         <!-- Plugin versions -->
         <checkstyle-maven-plugin.version>3.1.2</checkstyle-maven-plugin.version>
-        <findbugs-slf4j-bug-pattern.version>1.4.2</findbugs-slf4j-bug-pattern.version>
-        <findbugs-sec-bug-pattern.version>1.8.0</findbugs-sec-bug-pattern.version>
-        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
+        <findbugs-slf4j-bug-pattern.version>1.5.0</findbugs-slf4j-bug-pattern.version>
+        <findbugs-sec-bug-pattern.version>1.12.0</findbugs-sec-bug-pattern.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-        <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
+        <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.0.0</maven-enforcer-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
@@ -65,13 +65,13 @@
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <nexus-staging-plugin.version>1.6.13</nexus-staging-plugin.version>
         <pitest-maven.version>1.7.2</pitest-maven.version>
-        <spotbugs.version>4.2.3</spotbugs.version>
+        <spotbugs.version>4.6.0.0</spotbugs.version>
         <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
 
         <!-- Plugin dependencies -->
-        <asm.version>9.2</asm.version>
+        <asm.version>9.3</asm.version>
         <checkstyle.version>9.0.1</checkstyle.version>
-        <maven-dependency-analyzer.version>1.11.3</maven-dependency-analyzer.version>
+        <maven-dependency-analyzer.version>1.12.0</maven-dependency-analyzer.version>
         <pitest-junit5-plugin.version>0.15</pitest-junit5-plugin.version>
     </properties>
 
@@ -249,8 +249,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
                     <showWarnings>true</showWarnings>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
