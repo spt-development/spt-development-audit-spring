@@ -20,4 +20,29 @@
         <Class name="com.spt.development.audit.spring.util.HttpRequestUtils" />
         <Bug pattern="SERVLET_HEADER" />
     </Match>
+
+    <!-- No obvious workaround - not possible to take a copy of jmsTemplate -->
+    <Match>
+        <Class name="com.spt.development.audit.spring.JmsAuditEventWriter" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!--
+         False positive - method in question is called in a lambda, therefore not called when the object is
+         constructed.
+      -->
+    <Match>
+        <Class name="com.spt.development.audit.spring.security.DefaultAuthenticationAdapterFactory" />
+        <Bug pattern="MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR" />
+    </Match>
+
+    <!--
+         False positive - whilst technically valid, anything that looks like unknown is unlikely to be a valid IP
+         address.
+      -->
+    <Match>
+        <Class name="com.spt.development.audit.spring.util.HttpRequestUtils" />
+        <Method name="getClientIpAddress" />
+        <Bug pattern="IMPROPER_UNICODE" />
+    </Match>
 </FindBugsFilter>
