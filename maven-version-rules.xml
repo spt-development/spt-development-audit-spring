@@ -28,6 +28,11 @@
                 <ignoreVersion type="regex">.*</ignoreVersion>
             </ignoreVersions>
         </rule>
+        <rule groupId="org.aspectj" artifactId="aspectjweaver" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
 
         <!-- Test dependencies aligned with Spring Boot -->
         <rule groupId="org.mockito" artifactId="mockito-core" comparisonMethod="maven">

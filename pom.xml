@@ -40,15 +40,15 @@
         <jakarta-servlet.version>4.0.4</jakarta-servlet.version>
         <lombok.version>1.18.24</lombok.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <spring.version>5.3.20</spring.version>
-        <spring-security.version>5.7.1</spring-security.version>
+        <spring.version>5.3.22</spring.version>
+        <spring-security.version>5.7.2</spring-security.version>
         <spt-cid.version>2.0.11</spt-cid.version>
 
         <!-- Test dependency versions -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
         <mockito.version>4.5.1</mockito.version>
-        <spt-test.version>2.0.5</spt-test.version>
+        <spt-test.version>2.0.6-SNAPSHOT</spt-test.version>
 
         <!-- Plugin versions -->
         <checkstyle-maven-plugin.version>3.1.2</checkstyle-maven-plugin.version>
