@@ -48,7 +48,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
         <mockito.version>4.5.1</mockito.version>
-        <spt-test.version>2.0.6-SNAPSHOT</spt-test.version>
+        <spt-test.version>2.0.6</spt-test.version>
 
         <!-- Plugin versions -->
         <checkstyle-maven-plugin.version>3.1.2</checkstyle-maven-plugin.version>
@@ -470,7 +470,7 @@
                 <version>${maven-release-plugin.version}</version>
                 <configuration>
                     <goals>deploy</goals>
-                    <scmCommentPrefix>[skip travis] [maven-release-plugin] </scmCommentPrefix>
+                    <scmCommentPrefix>[skip ci] [maven-release-plugin] </scmCommentPrefix>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
