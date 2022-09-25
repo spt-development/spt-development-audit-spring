@@ -43,11 +43,11 @@
         <jakarta-servlet.version>4.0.4</jakarta-servlet.version>
         <lombok.version>1.18.24</lombok.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <spring.version>5.3.22</spring.version>
+        <spring.version>5.3.23</spring.version>
         <spring-security.version>5.7.3</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-test.version>2.0.7</spt-test.version>
+        <spt-development-test>2.0.8</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -198,7 +198,7 @@
                     <artifactId>httpclient</artifactId>
                 </exclusion>
             </exclusions>
-            <version>${spt-test.version}</version>
+            <version>${spt-development-test}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -337,6 +337,14 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>${spotbugs.version}</version>
+                <dependencies>
+                    <!-- Overriding the default analyzer version, to support JDK 19 -->
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                        <version>${asm.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
