@@ -44,10 +44,10 @@
         <lombok.version>1.18.24</lombok.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>5.3.23</spring.version>
-        <spring-security.version>5.7.3</spring-security.version>
+        <spring-security.version>5.7.4</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test>2.0.8</spt-development-test>
+        <spt-development-test>2.0.9</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
