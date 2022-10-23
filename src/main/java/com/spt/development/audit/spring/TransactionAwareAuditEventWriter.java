@@ -1,12 +1,14 @@
 package com.spt.development.audit.spring;
 
-import com.spt.development.cid.CorrelationId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionSynchronization;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static com.spt.development.audit.spring.util.CorrelationIdUtils.addCorrelationIdToArguments;
 
 /**
  * Transaction aware {@link AuditEventWriter} which delays writing the audit event until the transaction is committed
@@ -17,13 +19,33 @@ import java.util.function.Consumer;
 @Slf4j
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class TransactionAwareAuditEventWriter implements AuditEventWriter {
+    private final boolean includeCorrelationIdInLogs;
     private final TransactionSyncManFacade transactionSyncManFacade;
 
     /**
      * Creates a vanilla {@link TransactionAwareAuditEventWriter}.
      */
     protected TransactionAwareAuditEventWriter() {
-        this(new TransactionSyncManFacade());
+        this(true);
+    }
+
+    /**
+     * Creates a {@link TransactionAwareAuditEventWriter}.
+     *
+     * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
+     *                                   in the log statements written by this writer.
+     */
+    protected TransactionAwareAuditEventWriter(boolean includeCorrelationIdInLogs) {
+        this(includeCorrelationIdInLogs, new TransactionSyncManFacade());
+    }
+
+    /**
+     * Checks whether the correlation ID should be explicitly included in log statements or not.
+     *
+     * @return <code>true</code> if correlation IDs should be included in log statements.
+     */
+    protected boolean isIncludeCorrelationIdInLogs() {
+        return includeCorrelationIdInLogs;
     }
 
     /**
@@ -35,14 +57,20 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
     @Override
     public void write(AuditEvent auditEvent) {
         if (transactionSyncManFacade.isTransactionActive()) {
-            LOG.debug("[{}] Transaction active, audit event will be written when transaction commits: {}",
-                    CorrelationId.get(), auditEvent);
-
-            transactionSyncManFacade.register(new AuditEventTransactionSync(auditEvent, this::doWrite));
+            debug("Transaction active, audit event will be written when transaction commits: {}", auditEvent);
+            transactionSyncManFacade.register(new AuditEventTransactionSync(includeCorrelationIdInLogs, auditEvent, this::doWrite));
 
             return;
         }
         doWrite(auditEvent);
+    }
+
+    private void debug(String format, Object... arguments) {
+        if (includeCorrelationIdInLogs) {
+            LOG.debug("[{}] " + format, addCorrelationIdToArguments(arguments));
+            return;
+        }
+        LOG.debug(format, arguments);
     }
 
     /**
@@ -53,8 +81,10 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
      */
     protected abstract void doWrite(AuditEvent auditEvent);
 
+    @Slf4j
     @AllArgsConstructor
     static class AuditEventTransactionSync implements TransactionSynchronization {
+        private final boolean includeCorrelationIdInLogs;
         private final AuditEvent auditEvent;
         private final Consumer<AuditEvent> onAuditEvent;
 
@@ -71,15 +101,31 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
                 //
                 // All of the auditing data is logged in the log message below, so that *could* be used to manually repair
                 // the audit log if necessary.
-                LOG.error("[{}] Failed to write audit event: {}", CorrelationId.get(), auditEvent, ex);
+                error("Failed to write audit event: {}", auditEvent, ex);
             }
         }
 
         @Override
         public void afterCompletion(int status) {
             if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                LOG.info("[{}] Transaction was rolled back, discarding audit event: {}", CorrelationId.get(), auditEvent);
+                info("Transaction was rolled back, discarding audit event: {}", auditEvent);
             }
+        }
+
+        void info(String format, Object... arguments) {
+            log(LOG::info, format, arguments);
+        }
+
+        void error(String format, Object... arguments) {
+            log(LOG::error, format, arguments);
+        }
+
+        private void log(BiConsumer<String, Object[]> log, String format, Object[] arguments) {
+            if (includeCorrelationIdInLogs) {
+                log.accept("[{}] " + format, addCorrelationIdToArguments(arguments));
+                return;
+            }
+            log.accept(format, arguments);
         }
     }
 }

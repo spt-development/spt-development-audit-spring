@@ -52,6 +52,7 @@
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
+        <logback.version>1.2.11</logback.version>
         <mockito.version>4.5.1</mockito.version>
 
         <!-- Plugin versions -->
@@ -239,6 +240,12 @@
         </dependency>
 
         <!-- Test dependencies not directly related to testing -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>

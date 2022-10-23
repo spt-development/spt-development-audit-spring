@@ -1,9 +1,13 @@
 package com.spt.development.audit.spring;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.spt.development.cid.CorrelationId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.jms.core.JmsTemplate;
@@ -13,7 +17,12 @@ import javax.jms.Message;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import static com.spt.development.test.LogbackUtil.verifyLogging;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,9 +48,10 @@ class JmsAuditEventWriterTest {
         CorrelationId.reset();
     }
 
-    @Test
-    void write_validAuditEvent_shouldDelegateToJmaTemplate() throws Exception {
-        final JmsAuditEventWriterArgs args = new JmsAuditEventWriterArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void write_validAuditEvent_shouldDelegateToJmsTemplate(boolean includeCorrelationIdInLogs) throws Exception {
+        final JmsAuditEventWriterArgs args = new JmsAuditEventWriterArgs(includeCorrelationIdInLogs);
 
         createWriter(args).write(
                 AuditEvent.builder()
@@ -75,11 +85,76 @@ class JmsAuditEventWriterTest {
         verify(message, times(1)).setJMSCorrelationID(TestData.CORRELATION_ID);
     }
 
+    @Test
+    void write_validAuditEvent_shouldDebugLogAuditEventWithoutCorrelationId() {
+        final JmsAuditEventWriterArgs args = new JmsAuditEventWriterArgs(false);
+
+        verifyLogging(
+                JmsAuditEventWriter.class,
+                () -> {
+                    createWriter(args).write(
+                            AuditEvent.builder()
+                                    .type(TestData.AUDIT_EVENT_TYPE)
+                                    .subType(TestData.AUDIT_EVENT_SUB_TYPE)
+                                    .correlationId(TestData.CORRELATION_ID)
+                                    .build()
+                    );
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.DEBUG)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Adding audit event message to JMS queue:"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.AUDIT_EVENT_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.AUDIT_EVENT_SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                }
+        );
+    }
+
+    @Test
+    void write_validAuditEvent_shouldDebugLogAuditEventWithCorrelationId() {
+        final JmsAuditEventWriterArgs args = new JmsAuditEventWriterArgs(true);
+
+        verifyLogging(
+                JmsAuditEventWriter.class,
+                () -> {
+                    createWriter(args).write(
+                            AuditEvent.builder()
+                                    .type(TestData.AUDIT_EVENT_TYPE)
+                                    .subType(TestData.AUDIT_EVENT_SUB_TYPE)
+                                    .correlationId(TestData.CORRELATION_ID)
+                                    .build()
+                    );
+                    return null;
+                },
+                Level.DEBUG,
+                "[" + TestData.CORRELATION_ID + "]",
+                "Adding audit event message to JMS queue:",
+                "type=" + TestData.AUDIT_EVENT_TYPE,
+                "subType=" + TestData.AUDIT_EVENT_SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID
+        );
+    }
+
     private JmsAuditEventWriter createWriter(JmsAuditEventWriterArgs args) {
-        return new JmsAuditEventWriter(TestData.DESTINATION_NAME, args.jmsTemplate);
+        return args.includeCorrelationIdInLogs
+                ? new JmsAuditEventWriter(TestData.DESTINATION_NAME, args.jmsTemplate)
+                : new JmsAuditEventWriter(args.includeCorrelationIdInLogs, TestData.DESTINATION_NAME, args.jmsTemplate);
     }
 
     private static class JmsAuditEventWriterArgs {
+        boolean includeCorrelationIdInLogs;
         JmsTemplate jmsTemplate = Mockito.mock(JmsTemplate.class);
+
+        JmsAuditEventWriterArgs(boolean includeCorrelationIdInLogs) {
+            this.includeCorrelationIdInLogs = includeCorrelationIdInLogs;
+        }
     }
 }

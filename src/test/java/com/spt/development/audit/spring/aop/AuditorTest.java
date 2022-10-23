@@ -1,5 +1,7 @@
 package com.spt.development.audit.spring.aop;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.spt.development.audit.spring.AuditEvent;
@@ -14,6 +16,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -27,12 +31,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.spt.development.test.LogbackUtil.verifyErrorLogging;
+import static com.spt.development.test.LogbackUtil.verifyLogging;
 import static com.spt.development.test.LogbackUtil.verifyWarnLogging;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,16 +81,18 @@ class AuditorTest {
         CorrelationId.set(TestData.CORRELATION_ID);
     }
 
-    @Test
-    void audit_joinPointWithReturnValue_shouldReturnJoinPointsReturnValue() throws Throwable {
-        final Object result = createAuditor().audit(mockJoinPoint(new Object[0]));
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_joinPointWithReturnValue_shouldReturnJoinPointsReturnValue(boolean includeCorrelationIdInLogs) throws Throwable {
+        final Object result = createAuditor(includeCorrelationIdInLogs).audit(mockJoinPoint(new Object[0]));
 
         assertThat(result, is(TestData.RESULT));
     }
 
-    @Test
-    void audit_auditedMethodWithoutTypeSet_shouldThrowException() throws Throwable {
-        final Auditor target = createAuditor();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithoutTypeSet_shouldThrowException(boolean includeCorrelationIdInLogs) throws Throwable {
+        final Auditor target = createAuditor(includeCorrelationIdInLogs);
         final ProceedingJoinPoint joinPoint = mockJoinPoint("testTypeNotSet", new Object[0]);
 
         final IllegalStateException result = assertThrows(IllegalStateException.class, () -> target.audit(joinPoint));
@@ -92,9 +101,10 @@ class AuditorTest {
         assertThat(result.getMessage(), is("Programming error: @Audited annotation must have type set"));
     }
 
-    @Test
-    void audit_auditedMethod_shouldSendAuditEvent() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethod_shouldSendAuditEvent(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint(new Object[0]));
 
@@ -116,9 +126,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getCreated(), is(notNullValue()));
     }
 
-    @Test
-    void audit_auditedMethodWithIdParameter_shouldSendAuditEventWithIdSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithIdParameter_shouldSendAuditEventWithIdSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint(new Object[] { Long.parseLong(TestData.ID) }, long.class));
 
@@ -129,9 +140,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getId(), is(TestData.ID));
     }
 
-    @Test
-    void audit_auditedMethodWithIdFieldOfParameter_shouldSendAuditEventWithIdSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithIdFieldOfParameter_shouldSendAuditEventWithIdSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter() }));
 
@@ -143,8 +155,83 @@ class AuditorTest {
     }
 
     @Test
-    void audit_auditedMethodWithIdReturnType_shouldSendAuditEventWithIdSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    void audit_auditedMethodWithIdFieldOfParameter_shouldLogDebugWithoutCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(false);
+
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter() }));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.DEBUG)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Generated audit event:"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("id=" + TestData.ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("details=null"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("userId=" + TestData.USER_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("username=" + TestData.USERNAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("originatingIP=" + TestData.ORIGINATING_IP));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceId=" + TestData.APP_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceVersion=" + TestData.VERSION));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serverHostName=" + TestData.SERVER_HOST_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("created="));
+                }
+        );
+    }
+
+    @Test
+    void audit_auditedMethodWithIdFieldOfParameter_shouldLogDebugWithCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(true);
+
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter() }));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                Level.DEBUG,
+                "[" + TestData.CORRELATION_ID + "]",
+                "Generated audit event:",
+                "type=" + TestData.TYPE,
+                "subType=" + TestData.SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID,
+                "id=" + TestData.ID,
+                "details=null",
+                "userId=" + TestData.USER_ID,
+                "username=" + TestData.USERNAME,
+                "originatingIP=" + TestData.ORIGINATING_IP,
+                "serviceId=" + TestData.APP_NAME,
+                "serviceVersion=" + TestData.VERSION,
+                "serverHostName=" + TestData.SERVER_HOST_NAME,
+                "created="
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithIdReturnType_shouldSendAuditEventWithIdSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint("testIdReturned", new Object[0]));
 
@@ -156,9 +243,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getId(), is(TestData.RESULT));
     }
 
-    @Test
-    void audit_auditedMethodWithIdFieldOfReturnType_shouldSendAuditEventWithIdSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithIdFieldOfReturnType_shouldSendAuditEventWithIdSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         final ProceedingJoinPoint joinPoint = mockJoinPoint("testIdFromReturnedObject", new Object[0]);
         when(joinPoint.proceed()).thenReturn(new TestIdParameter());
@@ -172,9 +260,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getId(), is(TestData.ID));
     }
 
-    @Test
-    void audit_auditedMethodWithNullIdParameter_shouldSendAuditEventWithNullId() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithNullIdParameter_shouldSendAuditEventWithNullId(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint(new Object[] { null }, TestIdParameter.class));
 
@@ -185,28 +274,55 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getId(), is(nullValue()));
     }
 
-
     @Test
-    void audit_auditedMethodWithNullIdParameter_shouldLogWarning() throws Throwable {
-        verifyWarnLogging(
+    void audit_auditedMethodWithNullIdParameter_shouldLogWarningWithoutCorrelationId() {
+        verifyLogging(
                 Auditor.class,
                 () -> {
                     try {
-                        createAuditor().audit(mockJoinPoint(new Object[] { null }, TestIdParameter.class));
+                        createAuditor(false).audit(mockJoinPoint(new Object[] { null }, TestIdParameter.class));
                     }
                     catch (Throwable t) {
                         throw new RuntimeException(t);
                     }
                     return null;
                 },
-                TestData.CORRELATION_ID,
-                "Parameter 1 was annotated with @Audit.Id annotation but is null"
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.WARN)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Parameter 1 was annotated with @Audit.Id annotation but is null"));
+                }
         );
     }
 
     @Test
-    void audit_auditedMethodWithNullIdFieldOfParameter_shouldSendAuditEventWithNullId() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    void audit_auditedMethodWithNullIdParameter_shouldLogWarningWithCorrelationId() {
+        verifyWarnLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(true).audit(mockJoinPoint(new Object[] { null }, TestIdParameter.class));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                "[" + TestData.CORRELATION_ID + "]",
+                "Parameter 1 was annotated with @Audit.Id annotation but is null"
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithNullIdFieldOfParameter_shouldSendAuditEventWithNullId(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter(null) }));
 
@@ -218,8 +334,58 @@ class AuditorTest {
     }
 
     @Test
-    void audit_auditedMethodWithoutUnknownIdField_shouldThrowException() throws Throwable {
-        final Auditor target = createAuditor();
+    void audit_auditedMethodWithNullIdFieldOfParameter_shouldLogWarningWithoutCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(false);
+
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter(null) }));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.WARN)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Parameter 1 was annotated with @Audit.Id(field = \"myIdParam\") annotation but the 'myIdParam' field is null"));
+                }
+        );
+    }
+
+    @Test
+    void audit_auditedMethodWithNullIdFieldOfParameter_shouldLogWarningWithCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(true);
+
+        verifyWarnLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[] { new TestIdParameter(null) }));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                "[" + TestData.CORRELATION_ID + "]",
+                "Parameter 1 was annotated with @Audit.Id(field = \"myIdParam\") annotation but the 'myIdParam' field is null"
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithoutUnknownIdField_shouldThrowException(boolean includeCorrelationIdInLogs) throws Throwable {
+        final Auditor target = createAuditor(includeCorrelationIdInLogs);
         final ProceedingJoinPoint joinPoint = mockJoinPoint("testUnknownIdField", new Object[] { new Object() }, Object.class);
 
         final IllegalStateException result = assertThrows(IllegalStateException.class, () -> target.audit(joinPoint));
@@ -230,9 +396,10 @@ class AuditorTest {
         assertThat(result.getMessage(), containsString("could be found"));
     }
 
-    @Test
-    void audit_auditedMethodWithDetailParameter_shouldSendAuditEventWithDetailsSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithDetailParameter_shouldSendAuditEventWithDetailsSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
         final TestDetailParameter parameter = new TestDetailParameter("field1", "field2");
 
         createAuditor(args).audit(mockJoinPoint(new Object[] { parameter }));
@@ -244,9 +411,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getDetails(), is(GSON.toJson(parameter)));
     }
 
-    @Test
-    void audit_auditedMethodWithMultipleDetailParameters_shouldSendAuditEventWithDetailsSet() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodWithMultipleDetailParameters_shouldSendAuditEventWithDetailsSet(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         final TestDetailParameter parameter1 = new TestDetailParameter("field1", "field2");
         final TestDetailParameter parameter2 = new TestDetailParameter("field3", "field4");
@@ -265,9 +433,10 @@ class AuditorTest {
         assertThat(auditEventCaptor.getValue().getDetails(), is(GSON.toJson(expectedDetails)));
     }
 
-    @Test
-    void audit_auditedMethodMultipleDetailParametersNoNames_shouldThrowException() throws Throwable {
-        final Auditor target = createAuditor();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodMultipleDetailParametersNoNames_shouldThrowException(boolean includeCorrelationIdInLogs) throws Throwable {
+        final Auditor target = createAuditor(includeCorrelationIdInLogs);
 
         final TestDetailParameter parameter1 = new TestDetailParameter("field1", "field2");
         final TestDetailParameter parameter2 = new TestDetailParameter("field3", "field4");
@@ -284,9 +453,10 @@ class AuditorTest {
         assertThat(result.getMessage(), containsString("with @Audited.Detail, they must all have their name set"));
     }
 
-    @Test
-    void audit_auditedMethodFailsToGetServerHostName_shouldSendAuditEventWithNullServerHostName() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void audit_auditedMethodFailsToGetServerHostName_shouldSendAuditEventWithNullServerHostName(boolean includeCorrelationIdInLogs) throws Throwable {
+        final AuditorArgs args = new AuditorArgs(includeCorrelationIdInLogs);
 
         when(args.localhostFacade.getServerHostName()).thenThrow(new UnknownHostException("test"));
 
@@ -300,8 +470,105 @@ class AuditorTest {
     }
 
     @Test
-    void audit_auditedMethodFailsToSendAuditEvent_shouldLogError() throws Throwable {
-        final AuditorArgs args = new AuditorArgs();
+    void audit_auditedMethodFailsToGetServerHostName_shouldLogWarningWithoutCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(false);
+
+        when(args.localhostFacade.getServerHostName()).thenThrow(new UnknownHostException("test"));
+
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[0]));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.WARN)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Failed to determine server host name for auditing purposes"));
+                }
+        );
+    }
+
+    @Test
+    void audit_auditedMethodFailsToGetServerHostName_shouldLogWarningWithCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(true);
+
+        when(args.localhostFacade.getServerHostName()).thenThrow(new UnknownHostException("test"));
+
+        verifyWarnLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(mockJoinPoint(new Object[0]));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                "[" + TestData.CORRELATION_ID + "]",
+                "Failed to determine server host name for auditing purposes"
+        );
+    }
+
+    @Test
+    void audit_auditedMethodFailsToSendAuditEvent_shouldLogErrorWithoutCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(false);
+        final ProceedingJoinPoint joinPoint = mockJoinPoint(new Object[0]);
+
+        doThrow(new RuntimeException("Test")).when(args.auditEventWriter).write(any());
+
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(args).audit(joinPoint);
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.ERROR)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Failed to send audit event:"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("id=null"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("details=null"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("userId=" + TestData.USER_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("username=" + TestData.USERNAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("originatingIP=" + TestData.ORIGINATING_IP));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceId=" + TestData.APP_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceVersion=" + TestData.VERSION));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serverHostName=" + TestData.SERVER_HOST_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("created="));
+                }
+        );
+    }
+
+    @Test
+    void audit_auditedMethodFailsToSendAuditEvent_shouldLogErrorWithCorrelationId() throws Throwable {
+        final AuditorArgs args = new AuditorArgs(true);
         final ProceedingJoinPoint joinPoint = mockJoinPoint(new Object[0]);
 
         doThrow(new RuntimeException("Test")).when(args.auditEventWriter).write(any());
@@ -317,8 +584,66 @@ class AuditorTest {
                     }
                     return null;
                 },
-                CorrelationId.get(),
-                "Failed to send audit event"
+                "[" + TestData.CORRELATION_ID + "]",
+                "Failed to send audit event:",
+                "type=" + TestData.TYPE,
+                "subType=" + TestData.SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID,
+                "id=null",
+                "details=null",
+                "userId=" + TestData.USER_ID,
+                "username=" + TestData.USERNAME,
+                "originatingIP=" + TestData.ORIGINATING_IP,
+                "serviceId=" + TestData.APP_NAME,
+                "serviceVersion=" + TestData.VERSION,
+                "serverHostName=" + TestData.SERVER_HOST_NAME,
+                "created="
+        );
+    }
+
+    @Test
+    void audit_auditMethodNoParametersAuditedIdAnnotation_shouldLogWarningWithoutCorrelationId() {
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(false).audit(mockJoinPoint(new Object[0]));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.DEBUG)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("No parameters annotated with @Audited.Id annotation"));
+                }
+        );
+    }
+
+    @Test
+    void audit_auditMethodNoParametersAuditedIdAnnotation_shouldLogWarningWithCorrelationId() {
+        verifyLogging(
+                Auditor.class,
+                () -> {
+                    try {
+                        createAuditor(true).audit(mockJoinPoint(new Object[0]));
+                    }
+                    catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                    return null;
+                },
+                Level.DEBUG,
+                "[" + TestData.CORRELATION_ID + "]",
+                "No parameters annotated with @Audited.Id annotation"
         );
     }
 
@@ -347,13 +672,13 @@ class AuditorTest {
         return joinPoint;
     }
 
-    private Auditor createAuditor() throws UnknownHostException {
-        return createAuditor(new AuditorArgs());
+    private Auditor createAuditor(boolean includeCorrrelationIdInLogs) throws UnknownHostException {
+        return createAuditor(new AuditorArgs(includeCorrrelationIdInLogs));
     }
 
     private Auditor createAuditor(AuditorArgs args) {
         return new Auditor(args.appName, args.appVersion, args.localhostFacade, args.auditEventWriter,
-                args.authenticationAdapterFactory);
+                args.includeCorrelationIdInLogs, args.authenticationAdapterFactory);
     }
 
     @Test
@@ -367,19 +692,22 @@ class AuditorTest {
     }
 
     private static class AuditorArgs {
+        boolean includeCorrelationIdInLogs;
         String appName = TestData.APP_NAME;
         String appVersion = TestData.VERSION;
         LocalhostFacade localhostFacade = Mockito.mock(LocalhostFacade.class);
         AuditEventWriter auditEventWriter = Mockito.mock(AuditEventWriter.class);
         AuthenticationAdapterFactory authenticationAdapterFactory = Mockito.mock(AuthenticationAdapterFactory.class);
 
-        AuditorArgs() throws UnknownHostException {
+        AuditorArgs(final boolean includeCorrelationIdInLogs) throws UnknownHostException {
             final AuthenticationAdapter authenticationAdapter = Mockito.mock(AuthenticationAdapter.class);
 
             when(localhostFacade.getServerHostName()).thenReturn(TestData.SERVER_HOST_NAME);
             when(authenticationAdapterFactory.createAdapter()).thenReturn(authenticationAdapter);
             when(authenticationAdapter.getUserId()).thenReturn(TestData.USER_ID);
             when(authenticationAdapter.getUsername()).thenReturn(TestData.USERNAME);
+
+            this.includeCorrelationIdInLogs = includeCorrelationIdInLogs;
         }
     }
 
