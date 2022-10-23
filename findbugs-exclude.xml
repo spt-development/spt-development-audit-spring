@@ -13,6 +13,31 @@
     </Match>
 
     <!--
+         The dynamically created format and arrays are required so that we can switch on/off the inclusion of the
+         correlation ID in the logs.
+      -->
+    <Match>
+        <Class name="com.spt.development.audit.spring.JmsAuditEventWriter" />
+        <Method name="debug" />
+        <Bug pattern="SLF4J_FORMAT_SHOULD_BE_CONST" />
+    </Match>
+    <Match>
+        <Class name="com.spt.development.audit.spring.JmsAuditEventWriter" />
+        <Method name="debug" />
+        <Bug pattern="SLF4J_UNKNOWN_ARRAY" />
+    </Match>
+    <Match>
+        <Class name="com.spt.development.audit.spring.TransactionAwareAuditEventWriter" />
+        <Method name="debug" />
+        <Bug pattern="SLF4J_FORMAT_SHOULD_BE_CONST" />
+    </Match>
+    <Match>
+        <Class name="com.spt.development.audit.spring.TransactionAwareAuditEventWriter" />
+        <Method name="debug" />
+        <Bug pattern="SLF4J_UNKNOWN_ARRAY" />
+    </Match>
+
+    <!--
          We have to use the headers to get the originating client IP. Granted it is not perfect, but I am not aware of
          an alternative choice.
       -->

@@ -1,11 +1,15 @@
 package com.spt.development.audit.spring;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.spt.development.cid.CorrelationId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -16,10 +20,15 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.spt.development.test.LogbackUtil.verifyErrorLogging;
 import static com.spt.development.test.LogbackUtil.verifyInfoLogging;
+import static com.spt.development.test.LogbackUtil.verifyLogging;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -52,9 +61,10 @@ class TransactionAwareAuditEventWriterTest {
         CorrelationId.set(TestData.CORRELATION_ID);
     }
 
-    @Test
-    void onAuditEvent_validAuditEventInActiveTransaction_shouldWriteAuditEventOnCommitOfTransaction() {
-        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void write_validAuditEventInActiveTransaction_shouldWriteAuditEventOnCommitOfTransaction(boolean includeCorrelationIdInLogs) {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(includeCorrelationIdInLogs);
 
         createAuditEventWriter(args).write(createAuditEvent());
 
@@ -62,8 +72,77 @@ class TransactionAwareAuditEventWriterTest {
     }
 
     @Test
-    void onAuditEvent_validAuditEventInActiveTransactionNotCommitted_shouldNotWriteAuditEvent() {
-        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs();
+    void write_validAuditEvent_shouldDebugLogAuditEventWithoutCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(false);
+
+        createAuditEventWriter(args).write(createAuditEvent());
+
+        verifyLogging(
+                TransactionAwareAuditEventWriter.class,
+                () -> {
+                    createAuditEventWriter(args).write(createAuditEvent());
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.DEBUG)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Transaction active, audit event will be written when transaction commits:"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("id=" + TestData.ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("details=" + GSON.toJson(TestData.DETAILS)));
+                    assertThat(logEvent.getFormattedMessage(), containsString("userId=" + TestData.USER_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("username=" + TestData.USER_EMAIL));
+                    assertThat(logEvent.getFormattedMessage(), containsString("originatingIP=" + TestData.ORIGINATING_IP));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceId=" + TestData.SERVICE_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceVersion=" + TestData.SERVICE_VERSION));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serverHostName=" + TestData.SERVER_HOST_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("created=" + TestData.CREATED));
+                }
+        );
+    }
+
+    @Test
+    void write_validAuditEvent_shouldDebugLogAuditEventWithCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(true);
+
+        createAuditEventWriter(args).write(createAuditEvent());
+
+        verifyLogging(
+                TransactionAwareAuditEventWriter.class,
+                () -> {
+                    createAuditEventWriter(args).write(createAuditEvent());
+                    return null;
+                },
+                Level.DEBUG,
+                "[" + TestData.CORRELATION_ID + "]",
+                "Transaction active, audit event will be written when transaction commits:",
+                "type=" + TestData.TYPE,
+                "subType=" + TestData.SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID,
+                "id=" + TestData.ID,
+                "details=" + GSON.toJson(TestData.DETAILS),
+                "userId=" + TestData.USER_ID,
+                "username=" + TestData.USER_EMAIL,
+                "originatingIP=" + TestData.ORIGINATING_IP,
+                "serviceId=" + TestData.SERVICE_ID,
+                "serviceVersion=" + TestData.SERVICE_VERSION,
+                "serverHostName=" + TestData.SERVER_HOST_NAME,
+                "created=" + TestData.CREATED
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void write_validAuditEventInActiveTransactionNotCommitted_shouldNotWriteAuditEvent(boolean includeCorrelationIdInLogs) {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(includeCorrelationIdInLogs);
         doAnswer(iom -> null).when(args.transactionSyncManFacade).register(any());
 
         createAuditEventWriter(args).write(createAuditEvent());
@@ -71,9 +150,10 @@ class TransactionAwareAuditEventWriterTest {
         verify(args.delegate, never()).write(any());
     }
 
-    @Test
-    void onAuditEvent_validAuditEventOutsideTransaction_shouldWriteAuditEventImmediately() {
-        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void write_validAuditEventOutsideTransaction_shouldWriteAuditEventImmediately(boolean includeCorrelationIdInLogs) {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(includeCorrelationIdInLogs);
 
         when(args.transactionSyncManFacade.isTransactionActive()).thenReturn(false);
         doAnswer(iom -> null).when(args.transactionSyncManFacade).register(any());
@@ -105,9 +185,10 @@ class TransactionAwareAuditEventWriterTest {
         assertThat(auditEvent.getCreated(), is(TestData.CREATED));
     }
 
-    @Test
-    void onAuditEvent_auditWriteFailure_shouldSwallowException() {
-        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void write_auditWriteFailure_shouldSwallowException(boolean includeCorrelationIdInLogs) {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(includeCorrelationIdInLogs);
         final TransactionAwareAuditEventWriter target = createAuditEventWriter(args);
         final AuditEvent auditEvent = createAuditEvent();
 
@@ -117,8 +198,129 @@ class TransactionAwareAuditEventWriterTest {
     }
 
     @Test
-    void onAuditEvent_transactionRolledBack_shouldLogThatTransactionIsRolledBack() {
-        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs();
+    void write_auditWriteFailure_shouldLogErrorWithoutCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(false);
+        final TransactionAwareAuditEventWriter target = createAuditEventWriter(args);
+        final AuditEvent auditEvent = createAuditEvent();
+
+        doThrow(new RuntimeException("Test")).when(args.delegate).write(any());
+
+        target.write(auditEvent);
+
+        verifyLogging(
+                TransactionAwareAuditEventWriter.class,
+                () -> {
+                    target.write(auditEvent);
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.ERROR)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Failed to write audit event:"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("id=" + TestData.ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("details=" + GSON.toJson(TestData.DETAILS)));
+                    assertThat(logEvent.getFormattedMessage(), containsString("userId=" + TestData.USER_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("username=" + TestData.USER_EMAIL));
+                    assertThat(logEvent.getFormattedMessage(), containsString("originatingIP=" + TestData.ORIGINATING_IP));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceId=" + TestData.SERVICE_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceVersion=" + TestData.SERVICE_VERSION));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serverHostName=" + TestData.SERVER_HOST_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("created=" + TestData.CREATED));
+                }
+        );
+    }
+
+    @Test
+    void write_auditWriteFailure_shouldLogErrorWithCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(true);
+        final TransactionAwareAuditEventWriter target = createAuditEventWriter(args);
+        final AuditEvent auditEvent = createAuditEvent();
+
+        doThrow(new RuntimeException("Test")).when(args.delegate).write(any());
+
+        target.write(auditEvent);
+
+        verifyErrorLogging(
+                TransactionAwareAuditEventWriter.class,
+                () -> {
+                    target.write(auditEvent);
+                    return null;
+                },
+                "[" + TestData.CORRELATION_ID + "]",
+                "Failed to write audit event:",
+                "type=" + TestData.TYPE,
+                "subType=" + TestData.SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID,
+                "id=" + TestData.ID,
+                "details=" + GSON.toJson(TestData.DETAILS),
+                "userId=" + TestData.USER_ID,
+                "username=" + TestData.USER_EMAIL,
+                "originatingIP=" + TestData.ORIGINATING_IP,
+                "serviceId=" + TestData.SERVICE_ID,
+                "serviceVersion=" + TestData.SERVICE_VERSION,
+                "serverHostName=" + TestData.SERVER_HOST_NAME,
+                "created=" + TestData.CREATED
+        );
+    }
+
+    @Test
+    void write_transactionRolledBack_shouldLogThatTransactionIsRolledBackWithoutCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(false);
+
+        // Call afterCommit and afterCompletion as soon as register is called. This would normally happen
+        // asynchronously when the transaction is committed.
+        doAnswer(iom -> {
+            iom.getArgument(0, TransactionSynchronization.class).afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
+
+            return null;
+        }).when(args.transactionSyncManFacade).register(any());
+
+        final AuditEvent auditEvent = createAuditEvent();
+
+        verifyLogging(
+                TransactionAwareAuditEventWriter.class,
+                () -> {
+                    createAuditEventWriter(args).write(auditEvent);
+                    return null;
+                },
+                (logs) -> {
+                    final ILoggingEvent logEvent = logs.stream()
+                            .filter(e -> e.getLevel() == Level.INFO)
+                            .findFirst()
+                            .orElse(null);
+
+                    assertThat(logEvent, is(notNullValue()));
+
+                    assertThat(logEvent.getFormattedMessage(), not(startsWith("[" + TestData.CORRELATION_ID + "]")));
+                    assertThat(logEvent.getFormattedMessage(), containsString("Transaction was rolled back, discarding audit event"));
+                    assertThat(logEvent.getFormattedMessage(), containsString("type=" + TestData.TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("subType=" + TestData.SUB_TYPE));
+                    assertThat(logEvent.getFormattedMessage(), containsString("correlationId=" + TestData.CORRELATION_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("id=" + TestData.ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("details=" + GSON.toJson(TestData.DETAILS)));
+                    assertThat(logEvent.getFormattedMessage(), containsString("userId=" + TestData.USER_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("username=" + TestData.USER_EMAIL));
+                    assertThat(logEvent.getFormattedMessage(), containsString("originatingIP=" + TestData.ORIGINATING_IP));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceId=" + TestData.SERVICE_ID));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serviceVersion=" + TestData.SERVICE_VERSION));
+                    assertThat(logEvent.getFormattedMessage(), containsString("serverHostName=" + TestData.SERVER_HOST_NAME));
+                    assertThat(logEvent.getFormattedMessage(), containsString("created=" + TestData.CREATED));
+                }
+        );
+    }
+
+    @Test
+    void write_transactionRolledBack_shouldLogThatTransactionIsRolledBackWithCorrelationId() {
+        final TransactionAwareAuditEventWriterArgs args = new TransactionAwareAuditEventWriterArgs(true);
 
         // Call afterCommit and afterCompletion as soon as register is called. This would normally happen
         // asynchronously when the transaction is committed.
@@ -136,9 +338,20 @@ class TransactionAwareAuditEventWriterTest {
                     createAuditEventWriter(args).write(auditEvent);
                     return null;
                 },
-                TestData.CORRELATION_ID,
+                "[" + TestData.CORRELATION_ID + "]",
                 "Transaction was rolled back, discarding audit event",
-                auditEvent.toString()
+                "type=" + TestData.TYPE,
+                "subType=" + TestData.SUB_TYPE,
+                "correlationId=" + TestData.CORRELATION_ID,
+                "id=" + TestData.ID,
+                "details=" + GSON.toJson(TestData.DETAILS),
+                "userId=" + TestData.USER_ID,
+                "username=" + TestData.USER_EMAIL,
+                "originatingIP=" + TestData.ORIGINATING_IP,
+                "serviceId=" + TestData.SERVICE_ID,
+                "serviceVersion=" + TestData.SERVICE_VERSION,
+                "serverHostName=" + TestData.SERVER_HOST_NAME,
+                "created=" + TestData.CREATED
         );
     }
 
@@ -160,7 +373,7 @@ class TransactionAwareAuditEventWriterTest {
     }
 
     private TransactionAwareAuditEventWriter createAuditEventWriter(TransactionAwareAuditEventWriterArgs args) {
-        return new TestTransactionAwareAuditEventWriter(args.delegate, args.transactionSyncManFacade);
+        return new TestTransactionAwareAuditEventWriter(args.includeCorrelationIdInLogs, args.delegate, args.transactionSyncManFacade);
     }
 
     @Test
@@ -179,10 +392,11 @@ class TransactionAwareAuditEventWriterTest {
     }
 
     private static class TransactionAwareAuditEventWriterArgs {
+        boolean includeCorrelationIdInLogs;
         AuditEventWriter delegate = Mockito.mock(AuditEventWriter.class);
         TransactionSyncManFacade transactionSyncManFacade = Mockito.mock(TransactionSyncManFacade.class);
 
-        TransactionAwareAuditEventWriterArgs() {
+        TransactionAwareAuditEventWriterArgs(boolean includeCorrelationIdInLogs) {
             when(transactionSyncManFacade.isTransactionActive()).thenReturn(true);
 
             // Call afterCommit and afterCompletion as soon as register is called. This would normally happen
@@ -193,14 +407,20 @@ class TransactionAwareAuditEventWriterTest {
 
                 return null;
             }).when(transactionSyncManFacade).register(any());
+
+            this.includeCorrelationIdInLogs = includeCorrelationIdInLogs;
         }
     }
 
     private static class TestTransactionAwareAuditEventWriter extends TransactionAwareAuditEventWriter {
         private final AuditEventWriter delegate;
 
-        TestTransactionAwareAuditEventWriter(final AuditEventWriter auditEventWriter, final TransactionSyncManFacade transactionSyncManFacade) {
-            super(transactionSyncManFacade);
+        TestTransactionAwareAuditEventWriter(
+                final boolean includeCorrelationIdInLogs,
+                final AuditEventWriter auditEventWriter,
+                final TransactionSyncManFacade transactionSyncManFacade
+        ) {
+            super(includeCorrelationIdInLogs, transactionSyncManFacade);
 
             this.delegate = auditEventWriter;
         }

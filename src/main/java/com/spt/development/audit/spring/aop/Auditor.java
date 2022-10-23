@@ -25,7 +25,9 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
+import static com.spt.development.audit.spring.util.CorrelationIdUtils.addCorrelationIdToArguments;
 import static com.spt.development.audit.spring.util.HttpRequestUtils.getClientIpAddress;
 
 /**
@@ -42,6 +44,7 @@ public class Auditor {
     private final String appVersion;
     private final LocalhostFacade localhostFacade;
     private final AuditEventWriter auditEventWriter;
+    private final boolean includeCorrelationIdInLogs;
     private final AuthenticationAdapterFactory authenticationAdapterFactory;
 
     /**
@@ -58,7 +61,27 @@ public class Auditor {
             final String appVersion,
             final AuditEventWriter auditEventWriter,
             final AuthenticationAdapterFactory authenticationAdapterFactory) {
-        this(appName, appVersion, new LocalhostFacade(), auditEventWriter, authenticationAdapterFactory);
+        this(appName, appVersion, auditEventWriter, true, authenticationAdapterFactory);
+    }
+
+    /**
+     * Creates a new instance of the aspect.
+     *
+     * @param appName the name of the application that the auditing is for.
+     * @param appVersion the version of the application that the auditing is for.
+     * @param auditEventWriter the audit event writer that writes the audit logs.
+     * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
+     *                                   in the log statements output by the aspect.
+     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
+     *                                     currently authenticated user.
+     */
+    public Auditor(
+            final String appName,
+            final String appVersion,
+            final AuditEventWriter auditEventWriter,
+            final boolean includeCorrelationIdInLogs,
+            final AuthenticationAdapterFactory authenticationAdapterFactory) {
+        this(appName, appVersion, new LocalhostFacade(), auditEventWriter, includeCorrelationIdInLogs, authenticationAdapterFactory);
     }
 
     /**
@@ -68,6 +91,8 @@ public class Auditor {
      * @param appVersion the version of the application that the auditing is for.
      * @param localhostFacade a facade used to retrieve the hostname of the machine the application is running on.
      * @param auditEventWriter the audit event writer that writes the audit logs.
+     * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
+     *                                   in the log statements output by the aspect.
      * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
      *                                     currently authenticated user.
      */
@@ -76,12 +101,14 @@ public class Auditor {
             final String appVersion,
             final LocalhostFacade localhostFacade,
             final AuditEventWriter auditEventWriter,
+            final boolean includeCorrelationIdInLogs,
             final AuthenticationAdapterFactory authenticationAdapterFactory) {
 
         this.appName = appName;
         this.appVersion = appVersion;
         this.localhostFacade = localhostFacade;
         this.auditEventWriter = auditEventWriter;
+        this.includeCorrelationIdInLogs = includeCorrelationIdInLogs;
         this.authenticationAdapterFactory = authenticationAdapterFactory;
     }
 
@@ -153,14 +180,14 @@ public class Auditor {
                 return getIdFromAnnotatedValue("Parameter " + (i + 1), args[i], auditedId);
             }
         }
-        LOG.debug("[{}] No parameters annotated with @Audited.Id annotation", CorrelationId.get());
+        debug("No parameters annotated with @Audited.Id annotation");
 
         return null;
     }
 
     private String getIdFromAnnotatedValue(String annotationPosition, Object value, Audited.Id auditedId) {
         if (value == null) {
-            LOG.warn("[{}] {} was annotated with @Audit.Id annotation but is null", CorrelationId.get(), annotationPosition);
+            warn("{} was annotated with @Audit.Id annotation but is null", annotationPosition);
 
             return null;
         }
@@ -177,8 +204,8 @@ public class Auditor {
             final Object fieldValue = makeAccessibleAndGetField(field, value);
 
             if (fieldValue == null) {
-                LOG.warn("[{}] {} was annotated with @Audit.Id(field = \"{}\") annotation but the '{}' field is null",
-                        CorrelationId.get(), annotationPosition, fieldName, fieldName);
+                warn("{} was annotated with @Audit.Id(field = \"{}\") annotation but the '{}' field is null",
+                        annotationPosition, fieldName, fieldName);
 
                 return null;
             }
@@ -241,19 +268,39 @@ public class Auditor {
             return localhostFacade.getServerHostName();
         }
         catch (UnknownHostException ex) {
-            LOG.warn("[{}] Failed to determine server host name for auditing purposes", CorrelationId.get(), ex);
+            warn("Failed to determine server host name for auditing purposes", ex);
         }
         return null;
     }
 
     private void onAuditEvent(AuditEvent auditEvent) {
-        LOG.debug("[{}] Generated audit event: {}", CorrelationId.get(), auditEvent);
+        debug("Generated audit event: {}", auditEvent);
 
         try {
             auditEventWriter.write(auditEvent);
         }
         catch (Throwable t) {
-            LOG.error("[{}] Failed to send audit event: {}", CorrelationId.get(), auditEvent);
+            error("Failed to send audit event: {}", auditEvent);
         }
+    }
+
+    private void debug(String format, Object... arguments) {
+        log(LOG::debug, format, arguments);
+    }
+
+    private void warn(String format, Object... arguments) {
+        log(LOG::warn, format, arguments);
+    }
+
+    private void error(String format, Object... arguments) {
+        log(LOG::error, format, arguments);
+    }
+
+    private void log(BiConsumer<String, Object[]> log, String format, Object[] arguments) {
+        if (includeCorrelationIdInLogs) {
+            log.accept("[{}] " + format, addCorrelationIdToArguments(arguments));
+            return;
+        }
+        log.accept(format, arguments);
     }
 }
