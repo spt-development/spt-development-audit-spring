@@ -1,10 +1,9 @@
 package com.spt.development.audit.spring;
 
 import com.spt.development.cid.CorrelationId;
+import jakarta.jms.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.core.JmsTemplate;
-
-import javax.jms.Message;
 
 import static com.spt.development.audit.spring.util.CorrelationIdUtils.addCorrelationIdToArguments;
 

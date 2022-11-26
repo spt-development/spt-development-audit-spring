@@ -10,6 +10,7 @@ import com.spt.development.audit.spring.Audited;
 import com.spt.development.audit.spring.security.AuthenticationAdapter;
 import com.spt.development.audit.spring.security.AuthenticationAdapterFactory;
 import com.spt.development.cid.CorrelationId;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -24,7 +25,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;

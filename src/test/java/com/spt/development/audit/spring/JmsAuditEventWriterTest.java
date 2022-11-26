@@ -3,6 +3,9 @@ package com.spt.development.audit.spring;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.spt.development.cid.CorrelationId;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,10 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
-
-import javax.jms.Message;
-import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import static com.spt.development.test.LogbackUtil.verifyLogging;
 import static org.hamcrest.CoreMatchers.containsString;
