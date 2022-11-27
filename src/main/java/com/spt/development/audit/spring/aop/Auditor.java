@@ -5,9 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.spt.development.audit.spring.AuditEvent;
 import com.spt.development.audit.spring.AuditEventWriter;
 import com.spt.development.audit.spring.Audited;
+import com.spt.development.audit.spring.CorrelationIdProvider;
+import com.spt.development.audit.spring.DefaultCorrelationIdProvider;
 import com.spt.development.audit.spring.security.AuthenticationAdapter;
 import com.spt.development.audit.spring.security.AuthenticationAdapterFactory;
-import com.spt.development.cid.CorrelationId;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -45,6 +46,7 @@ public class Auditor {
     private final LocalhostFacade localhostFacade;
     private final AuditEventWriter auditEventWriter;
     private final boolean includeCorrelationIdInLogs;
+    private final CorrelationIdProvider correlationIdProvider;
     private final AuthenticationAdapterFactory authenticationAdapterFactory;
 
     /**
@@ -81,7 +83,30 @@ public class Auditor {
             final AuditEventWriter auditEventWriter,
             final boolean includeCorrelationIdInLogs,
             final AuthenticationAdapterFactory authenticationAdapterFactory) {
-        this(appName, appVersion, new LocalhostFacade(), auditEventWriter, includeCorrelationIdInLogs, authenticationAdapterFactory);
+        this(appName, appVersion, auditEventWriter, includeCorrelationIdInLogs, new DefaultCorrelationIdProvider(), authenticationAdapterFactory);
+    }
+
+    /**
+     * Creates a new instance of the aspect.
+     *
+     * @param appName the name of the application that the auditing is for.
+     * @param appVersion the version of the application that the auditing is for.
+     * @param auditEventWriter the audit event writer that writes the audit logs.
+     * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
+     *                                   in the log statements output by the aspect.
+     * @param correlationIdProvider provider for getting the current correlationId.
+     * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
+     *                                     currently authenticated user.
+     */
+    public Auditor(
+            final String appName,
+            final String appVersion,
+            final AuditEventWriter auditEventWriter,
+            final boolean includeCorrelationIdInLogs,
+            final CorrelationIdProvider correlationIdProvider,
+            final AuthenticationAdapterFactory authenticationAdapterFactory) {
+        this(appName, appVersion, new LocalhostFacade(), auditEventWriter, includeCorrelationIdInLogs,
+                correlationIdProvider, authenticationAdapterFactory);
     }
 
     /**
@@ -93,6 +118,7 @@ public class Auditor {
      * @param auditEventWriter the audit event writer that writes the audit logs.
      * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
      *                                   in the log statements output by the aspect.
+     * @param correlationIdProvider provider for getting the current correlationId.
      * @param authenticationAdapterFactory a factory for creating an adapter that is used to retrieve details about the
      *                                     currently authenticated user.
      */
@@ -102,13 +128,14 @@ public class Auditor {
             final LocalhostFacade localhostFacade,
             final AuditEventWriter auditEventWriter,
             final boolean includeCorrelationIdInLogs,
+            final CorrelationIdProvider correlationIdProvider,
             final AuthenticationAdapterFactory authenticationAdapterFactory) {
-
         this.appName = appName;
         this.appVersion = appVersion;
         this.localhostFacade = localhostFacade;
         this.auditEventWriter = auditEventWriter;
         this.includeCorrelationIdInLogs = includeCorrelationIdInLogs;
+        this.correlationIdProvider = correlationIdProvider;
         this.authenticationAdapterFactory = authenticationAdapterFactory;
     }
 
@@ -153,7 +180,7 @@ public class Auditor {
         final AuditEvent auditEvent = AuditEvent.builder()
                 .type(audited.type())
                 .subType(audited.subType())
-                .correlationId(CorrelationId.get())
+                .correlationId(correlationIdProvider.getCorrelationId())
                 .id(
                         auditedId == null ?
                                 getIdFromFirstAnnotatedMethodParameter(parameters, args) :
@@ -298,7 +325,7 @@ public class Auditor {
 
     private void log(BiConsumer<String, Object[]> log, String format, Object[] arguments) {
         if (includeCorrelationIdInLogs) {
-            log.accept("[{}] " + format, addCorrelationIdToArguments(arguments));
+            log.accept("[{}] " + format, addCorrelationIdToArguments(correlationIdProvider.getCorrelationId(), arguments));
             return;
         }
         log.accept(format, arguments);

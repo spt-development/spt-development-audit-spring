@@ -3,7 +3,7 @@
 
     <groupId>com.spt-development</groupId>
     <artifactId>spt-development-audit-spring</artifactId>
-    <version>2.0.11-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
 
     <name>audit-spring</name>
     <description>Adds auditing to your project through the use of annotations typically added to Service methods.</description>
@@ -48,7 +48,7 @@
         <spring-security.version>6.0.0</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test>2.0.10-SNAPSHOT</spt-development-test>
+        <spt-development-test>3.0.0</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
