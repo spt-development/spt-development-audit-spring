@@ -378,7 +378,7 @@ class TransactionAwareAuditEventWriterTest {
 
     @Test
     void constructor_defaultConstructor_shouldCreateNewInstanceWithTransactionSyncManFacade() {
-        final TransactionAwareAuditEventWriter result = new TransactionAwareAuditEventWriter() {
+        final TransactionAwareAuditEventWriter result = new TransactionAwareAuditEventWriter(true, new DefaultCorrelationIdProvider()) {
             @Override
             protected void doWrite(AuditEvent auditEvent) {
                 // NOOP
@@ -420,7 +420,7 @@ class TransactionAwareAuditEventWriterTest {
                 final AuditEventWriter auditEventWriter,
                 final TransactionSyncManFacade transactionSyncManFacade
         ) {
-            super(includeCorrelationIdInLogs, transactionSyncManFacade);
+            super(includeCorrelationIdInLogs, new DefaultCorrelationIdProvider(), transactionSyncManFacade);
 
             this.delegate = auditEventWriter;
         }

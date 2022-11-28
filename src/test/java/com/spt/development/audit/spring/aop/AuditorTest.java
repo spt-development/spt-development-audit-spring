@@ -7,9 +7,12 @@ import com.google.gson.GsonBuilder;
 import com.spt.development.audit.spring.AuditEvent;
 import com.spt.development.audit.spring.AuditEventWriter;
 import com.spt.development.audit.spring.Audited;
+import com.spt.development.audit.spring.CorrelationIdProvider;
+import com.spt.development.audit.spring.DefaultCorrelationIdProvider;
 import com.spt.development.audit.spring.security.AuthenticationAdapter;
 import com.spt.development.audit.spring.security.AuthenticationAdapterFactory;
 import com.spt.development.cid.CorrelationId;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -24,7 +27,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -678,7 +680,7 @@ class AuditorTest {
 
     private Auditor createAuditor(AuditorArgs args) {
         return new Auditor(args.appName, args.appVersion, args.localhostFacade, args.auditEventWriter,
-                args.includeCorrelationIdInLogs, args.authenticationAdapterFactory);
+                args.includeCorrelationIdInLogs, args.correlationIdProvider, args.authenticationAdapterFactory);
     }
 
     @Test
@@ -697,6 +699,7 @@ class AuditorTest {
         String appVersion = TestData.VERSION;
         LocalhostFacade localhostFacade = Mockito.mock(LocalhostFacade.class);
         AuditEventWriter auditEventWriter = Mockito.mock(AuditEventWriter.class);
+        CorrelationIdProvider correlationIdProvider = new DefaultCorrelationIdProvider();
         AuthenticationAdapterFactory authenticationAdapterFactory = Mockito.mock(AuthenticationAdapterFactory.class);
 
         AuditorArgs(final boolean includeCorrelationIdInLogs) throws UnknownHostException {

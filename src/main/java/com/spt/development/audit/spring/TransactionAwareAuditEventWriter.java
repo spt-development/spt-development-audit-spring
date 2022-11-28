@@ -20,23 +20,20 @@ import static com.spt.development.audit.spring.util.CorrelationIdUtils.addCorrel
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class TransactionAwareAuditEventWriter implements AuditEventWriter {
     private final boolean includeCorrelationIdInLogs;
+    private final CorrelationIdProvider correlationIdProvider;
     private final TransactionSyncManFacade transactionSyncManFacade;
-
-    /**
-     * Creates a vanilla {@link TransactionAwareAuditEventWriter}.
-     */
-    protected TransactionAwareAuditEventWriter() {
-        this(true);
-    }
 
     /**
      * Creates a {@link TransactionAwareAuditEventWriter}.
      *
      * @param includeCorrelationIdInLogs a flag to determine whether the correlation ID should be explicitly included
      *                                   in the log statements written by this writer.
+     * @param correlationIdProvider provider for getting the current correlationId.
      */
-    protected TransactionAwareAuditEventWriter(boolean includeCorrelationIdInLogs) {
-        this(includeCorrelationIdInLogs, new TransactionSyncManFacade());
+    protected TransactionAwareAuditEventWriter(
+            final boolean includeCorrelationIdInLogs,
+            final CorrelationIdProvider correlationIdProvider) {
+        this(includeCorrelationIdInLogs, correlationIdProvider, new TransactionSyncManFacade());
     }
 
     /**
@@ -46,6 +43,15 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
      */
     protected boolean isIncludeCorrelationIdInLogs() {
         return includeCorrelationIdInLogs;
+    }
+
+    /**
+     * Gets the current correlation Id.
+     *
+     * @return the current correlation Id.
+     */
+    protected String getCorrelationId() {
+        return correlationIdProvider.getCorrelationId();
     }
 
     /**
@@ -67,7 +73,7 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
 
     private void debug(String format, Object... arguments) {
         if (includeCorrelationIdInLogs) {
-            LOG.debug("[{}] " + format, addCorrelationIdToArguments(arguments));
+            LOG.debug("[{}] " + format, addCorrelationIdToArguments(getCorrelationId(), arguments));
             return;
         }
         LOG.debug(format, arguments);
@@ -122,7 +128,7 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
 
         private void log(BiConsumer<String, Object[]> log, String format, Object[] arguments) {
             if (includeCorrelationIdInLogs) {
-                log.accept("[{}] " + format, addCorrelationIdToArguments(arguments));
+                log.accept("[{}] " + format, addCorrelationIdToArguments(auditEvent.getCorrelationId(), arguments));
                 return;
             }
             log.accept(format, arguments);
