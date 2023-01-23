@@ -42,16 +42,17 @@
         <jakarta-jms.version>3.1.0</jakarta-jms.version>
         <jakarta-servlet.version>6.0.0</jakarta-servlet.version>
         <lombok.version>1.18.24</lombok.version>
+        <micrometer.version>1.10.3</micrometer.version>
         <slf4j.version>2.0.6</slf4j.version>
-        <spring.version>6.0.3</spring.version>
+        <spring.version>6.0.4</spring.version>
         <spring-security.version>6.0.1</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test>3.0.1</spt-development-test>
+        <spt-development-test>3.0.2</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
-        <junit-jupiter.version>5.9.1</junit-jupiter.version>
+        <junit-jupiter.version>5.9.2</junit-jupiter.version>
         <logback.version>1.4.5</logback.version>
         <mockito.version>4.8.1</mockito.version>
 
@@ -108,6 +109,11 @@
             </dependency>
 
             <!-- Dependencies added to avoid dependency convergence errors -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-observation</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
