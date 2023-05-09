@@ -43,16 +43,16 @@
         <jakarta-servlet.version>6.0.0</jakarta-servlet.version>
         <lombok.version>1.18.26</lombok.version>
         <slf4j.version>2.0.7</slf4j.version>
-        <spring.version>6.0.7</spring.version>
-        <spring-security.version>6.0.2</spring-security.version>
+        <spring.version>6.0.8</spring.version>
+        <spring-security.version>6.0.3</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test>3.0.4</spt-development-test>
+        <spt-development-test>3.0.5</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
         <junit-jupiter.version>5.9.2</junit-jupiter.version>
-        <logback.version>1.4.6</logback.version>
+        <logback.version>1.4.7</logback.version>
         <mockito.version>4.8.1</mockito.version>
 
         <!-- Plugin versions -->
