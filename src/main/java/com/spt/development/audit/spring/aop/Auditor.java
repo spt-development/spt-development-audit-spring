@@ -154,7 +154,7 @@ public class Auditor {
      *
      * @return the value returned from the audited method.
      *
-     * @throws Throwable thrown if the audited method throws a {@link Throwable}.
+     * @throws Exception thrown if the audited method throws a {@link Throwable}.
      */
     @Around("@annotation(com.spt.development.audit.spring.Audited)")
     public Object audit(ProceedingJoinPoint point) throws Throwable {
@@ -182,9 +182,9 @@ public class Auditor {
                 .subType(audited.subType())
                 .correlationId(correlationIdProvider.getCorrelationId())
                 .id(
-                        auditedId == null ?
-                                getIdFromFirstAnnotatedMethodParameter(parameters, args) :
-                                getIdFromAnnotatedValue("Return value", result, auditedId)
+                        auditedId == null
+                                ? getIdFromFirstAnnotatedMethodParameter(parameters, args)
+                                : getIdFromAnnotatedValue("Return value", result, auditedId)
                 )
                 .details(getDetailsFromAnnotatedParametersAsJson(parameters, args))
                 .userId(authentication.getUserId())
@@ -237,12 +237,13 @@ public class Auditor {
                 return null;
             }
             return fieldValue.toString();
-        }
-        catch (NoSuchFieldException ex) {
+        } catch (NoSuchFieldException ex) {
             throw new IllegalStateException(
-                    String.format("Programming error: %s of type: %s was annotated with @Audited.Id(field = \"%s\"), " +
-                                    "but no field with the name: '%s' could be found",
-                                  annotationPosition, value.getClass(), fieldName, fieldName),
+                    String.format(
+                        "Programming error: %s of type: %s was annotated with @Audited.Id(field = \"%s\"), but no field with the name: '%s' could "
+                            + "be found",
+                        annotationPosition, value.getClass(), fieldName, fieldName
+                    ),
                     ex
             );
         }
@@ -273,8 +274,11 @@ public class Auditor {
 
                 if (StringUtils.isEmpty(detailName) && !details.isEmpty()) {
                     throw new IllegalStateException(
-                            String.format("Programming error: If multiple method parameters are annotated with @Audited.Detail, " +
-                                    "they must all have their name set. Name was not set for parameter %d", i)
+                            String.format(
+                                "Programming error: If multiple method parameters are annotated with @Audited.Detail, they must all have their name "
+                                    + "set. Name was not set for parameter %d",
+                                i
+                            )
                     );
                 }
                 details.put(StringUtils.isEmpty(detailName) ? DEFAULT_DETAILS_KEY : detailName, args[i]);
@@ -293,8 +297,7 @@ public class Auditor {
     private String getServerHostName() {
         try {
             return localhostFacade.getServerHostName();
-        }
-        catch (UnknownHostException ex) {
+        } catch (UnknownHostException ex) {
             warn("Failed to determine server host name for auditing purposes", ex);
         }
         return null;
@@ -305,8 +308,7 @@ public class Auditor {
 
         try {
             auditEventWriter.write(auditEvent);
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             error("Failed to send audit event: {}", auditEvent);
         }
     }

@@ -30,6 +30,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -41,19 +42,19 @@ import static org.mockito.Mockito.when;
 class TransactionAwareAuditEventWriterTest {
     private static final Gson GSON = new GsonBuilder().create();
 
-    private interface TestData {
-        String TYPE = "APPLICATION";
-        String SUB_TYPE = "UPDATE";
-        String CORRELATION_ID = "30f6f97d-6956-485b-b7e7-a6c689a3d6dd";
-        String ID = "100";
-        Map<String, String> DETAILS = Collections.singletonMap("json", "value");
-        String USER_ID = "987";
-        String USER_EMAIL = "tester@testing-times.com";
-        String ORIGINATING_IP = "127.0.0.1";
-        String SERVICE_ID = "testService";
-        String SERVICE_VERSION = "1.0.1";
-        String SERVER_HOST_NAME = "localhost";
-        OffsetDateTime CREATED = OffsetDateTime.of(2020, 7, 19, 15, 29, 17, 0, ZoneOffset.UTC);
+    private static class TestData {
+        static final String TYPE = "APPLICATION";
+        static final String SUB_TYPE = "UPDATE";
+        static final String CORRELATION_ID = "30f6f97d-6956-485b-b7e7-a6c689a3d6dd";
+        static final String ID = "100";
+        static final Map<String, String> DETAILS = Collections.singletonMap("json", "value");
+        static final String USER_ID = "987";
+        static final String USER_EMAIL = "tester@testing-times.com";
+        static final String ORIGINATING_IP = "127.0.0.1";
+        static final String SERVICE_ID = "testService";
+        static final String SERVICE_VERSION = "1.0.1";
+        static final String SERVER_HOST_NAME = "localhost";
+        static final OffsetDateTime CREATED = OffsetDateTime.of(2020, 7, 19, 15, 29, 17, 0, ZoneOffset.UTC);
     }
 
     @BeforeEach
@@ -194,7 +195,7 @@ class TransactionAwareAuditEventWriterTest {
 
         doThrow(new RuntimeException("Test")).when(args.delegate).write(any());
 
-        target.write(auditEvent);
+        assertDoesNotThrow(() -> target.write(auditEvent));
     }
 
     @Test

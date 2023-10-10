@@ -30,11 +30,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JmsAuditEventWriterTest {
-    private interface TestData {
-        String DESTINATION_NAME = "test-destination-queue";
-        String CORRELATION_ID = "bfae9d36-fdac-48b4-85a0-e5381d872c16";
-        String AUDIT_EVENT_TYPE = "DOMAIN_TYPE";
-        String AUDIT_EVENT_SUB_TYPE = "CREATE";
+    private static class TestData {
+        static final String DESTINATION_NAME = "test-destination-queue";
+        static final String CORRELATION_ID = "bfae9d36-fdac-48b4-85a0-e5381d872c16";
+        static final String AUDIT_EVENT_TYPE = "DOMAIN_TYPE";
+        static final String AUDIT_EVENT_SUB_TYPE = "CREATE";
     }
 
     @BeforeEach

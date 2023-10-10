@@ -53,24 +53,24 @@ import static org.mockito.Mockito.when;
 class AuditorTest {
     private static final Gson GSON = new GsonBuilder().create();
 
-    private interface TestData {
-        String APP_NAME = "Test Application";
-        String VERSION = "v1.0.0";
-        String CORRELATION_ID = "b3015502-3b43-4012-95c2-1021f0aa9da9";
+    private static class TestData {
+        static final String APP_NAME = "Test Application";
+        static final String VERSION = "v1.0.0";
+        static final String CORRELATION_ID = "b3015502-3b43-4012-95c2-1021f0aa9da9";
 
-        String ID = "9879798";
-        String USER_ID = "87689";
-        String USERNAME = "testuser@testing-times.com";
-        String SERVER_HOST_NAME = "spt-main-host";
-        String ORIGINATING_IP = "127.9.9.9";
-        String TYPE = "APPLICATION";
-        String SUB_TYPE = "TEST_SUB_TYPE";
+        static final String ID = "9879798";
+        static final String USER_ID = "87689";
+        static final String USERNAME = "testuser@testing-times.com";
+        static final String SERVER_HOST_NAME = "spt-main-host";
+        static final String ORIGINATING_IP = "127.9.9.9";
+        static final String TYPE = "APPLICATION";
+        static final String SUB_TYPE = "TEST_SUB_TYPE";
 
-        String RESULT = "Success!";
-        String METHOD = "test";
+        static final String RESULT = "Success!";
+        static final String METHOD = "test";
 
-        String ARG1 = "TestArg";
-        String ARG2 = "TestArg2";
+        static final String ARG1 = "TestArg";
+        static final String ARG2 = "TestArg2";
     }
 
     @BeforeEach

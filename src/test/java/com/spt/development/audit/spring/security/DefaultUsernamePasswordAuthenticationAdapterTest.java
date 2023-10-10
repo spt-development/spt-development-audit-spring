@@ -5,14 +5,15 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DefaultUsernamePasswordAuthenticationAdapterTest {
-    private interface TestData {
-        String PRINCIPAL = "Test principle";
+    private static class TestData {
+        static final String PRINCIPAL = "Test principle";
     }
 
     @Test
@@ -56,7 +57,7 @@ class DefaultUsernamePasswordAuthenticationAdapterTest {
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override

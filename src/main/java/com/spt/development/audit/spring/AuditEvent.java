@@ -34,18 +34,21 @@ public class AuditEvent {
             )
             .create();
 
-    private String type;
-    private String subType;
-    private String correlationId;
-    private String id;
-    private String details;
-    private String userId;
-    private String username;
-    private String originatingIP;
-    private String serviceId;
-    private String serviceVersion;
-    private String serverHostName;
-    private OffsetDateTime created;
+    String type;
+    String subType;
+    String correlationId;
+    String id;
+    String details;
+    String userId;
+    String username;
+
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+    String originatingIP;
+
+    String serviceId;
+    String serviceVersion;
+    String serverHostName;
+    OffsetDateTime created;
 
     /**
      * Converts the audit event to JSON.
