@@ -38,13 +38,13 @@ public final class HttpRequestUtils {
         if (requestAttribute == null) {
             return null;
         }
-        return getClientIpAddress(((ServletRequestAttributes) requestAttribute));
+        return getClientIpAddress((ServletRequestAttributes) requestAttribute);
     }
 
     private static String getClientIpAddress(ServletRequestAttributes requestAttributes) {
         final HttpServletRequest request = requestAttributes.getRequest();
 
-        for (String header: IP_HEADER_CANDIDATES) {
+        for (String header : IP_HEADER_CANDIDATES) {
             final String ipList = request.getHeader(header);
 
             if (StringUtils.isNotEmpty(ipList) && !"unknown".equalsIgnoreCase(ipList)) {

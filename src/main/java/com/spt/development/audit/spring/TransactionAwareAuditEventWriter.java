@@ -99,8 +99,7 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
 
             try {
                 onAuditEvent.accept(auditEvent);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 // If an exception occurs log it and swallow. The whole idea of this class is that the audit events are
                 // sent after the main work has been done, therefore we don't want an error reported to the user if
                 // the auditing fails.

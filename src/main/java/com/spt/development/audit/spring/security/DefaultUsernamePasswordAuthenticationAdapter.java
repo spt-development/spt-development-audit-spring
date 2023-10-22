@@ -19,14 +19,12 @@ public class DefaultUsernamePasswordAuthenticationAdapter implements Authenticat
      * @param principal the principal to adapt.
      */
     public DefaultUsernamePasswordAuthenticationAdapter(final Object principal) {
-        this.usernameExtractor = principal instanceof UserDetails ?
-                () -> ((UserDetails)principal).getUsername() :
-                () -> principal.toString();
+        this(principal instanceof UserDetails ? () -> ((UserDetails) principal).getUsername() : principal::toString);
     }
 
     /**
-     * Gets the result of calling {@link UserDetails#getUsername()} if the principal representing the currently logged-
-     * in user is {@link UserDetails}, otherwise falls back to calling {@link Object#toString()}.
+     * Gets the result of calling {@link UserDetails#getUsername()} if the principal representing the currently logged-in
+     * user is {@link UserDetails}, otherwise falls back to calling {@link Object#toString()}.
      *
      * @return the username of the current user.
      */
