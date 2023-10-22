@@ -42,16 +42,16 @@
         <aspectj.version>1.9.20</aspectj.version>
         <commons-lang.version>3.12.0</commons-lang.version>
         <gson.version>2.10.1</gson.version>
-        <httpcore5.version>5.2.2</httpcore5.version>
+        <httpcore5.version>5.2.3</httpcore5.version>
         <jakarta-jms.version>3.1.0</jakarta-jms.version>
         <jakarta-servlet.version>6.0.0</jakarta-servlet.version>
         <lombok.version>1.18.30</lombok.version>
         <slf4j.version>2.0.9</slf4j.version>
-        <spring.version>6.0.12</spring.version>
-        <spring-security.version>6.1.4</spring-security.version>
+        <spring.version>6.0.13</spring.version>
+        <spring-security.version>6.1.5</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test>3.1.0-SNAPSHOT</spt-development-test>
+        <spt-development-test>3.1.0</spt-development-test>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -62,8 +62,8 @@
         <!-- Plugin versions -->
         <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
         <checkstyle-maven-plugin.version>3.3.0</checkstyle-maven-plugin.version>
-        <dependency-check-maven.version>8.4.0</dependency-check-maven.version>
-        <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
+        <dependency-check-maven.version>8.4.1</dependency-check-maven.version>
+        <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
         <license-maven-plugin.version>2.2.0</license-maven-plugin.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
