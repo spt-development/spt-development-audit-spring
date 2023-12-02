@@ -13,6 +13,11 @@
 
     <rules>
         <!-- Dependencies aligned with Spring Boot -->
+        <rule groupId="ch.qos.logback" artifactId="logback-*" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
         <rule groupId="com.google.code.gson" artifactId="gson" comparisonMethod="maven">
             <ignoreVersions>
                 <ignoreVersion type="regex">.*</ignoreVersion>
