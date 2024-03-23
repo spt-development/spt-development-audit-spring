@@ -3,7 +3,7 @@
 
     <groupId>com.spt-development</groupId>
     <artifactId>spt-development-audit-spring</artifactId>
-    <version>3.0.17-SNAPSHOT</version>
+    <version>3.0.16-SNAPSHOT</version>
 
     <name>audit-spring</name>
     <description>Adds auditing to your project through the use of annotations typically added to Service methods.</description>
