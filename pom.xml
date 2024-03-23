@@ -36,7 +36,7 @@
 
         <!-- Dependency versions -->
         <commons-collections.version>4.4</commons-collections.version>
-        <spt-cid.version>2.0.12</spt-cid.version>
+        <spt-cid.version>2.0.14</spt-cid.version>
 
         <!-- Dependency versions, matched to Spring Boot -->
         <aspectj.version>1.9.21</aspectj.version>
@@ -47,11 +47,11 @@
         <jakarta-servlet.version>6.0.0</jakarta-servlet.version>
         <lombok.version>1.18.30</lombok.version>
         <slf4j.version>2.0.12</slf4j.version>
-        <spring.version>6.1.4</spring.version>
-        <spring-security.version>6.2.2</spring-security.version>
+        <spring.version>6.1.5</spring.version>
+        <spring-security.version>6.2.3</spring-security.version>
 
         <!-- Test dependency versions -->
-        <spt-development-test.version>3.1.4</spt-development-test.version>
+        <spt-development-test.version>3.1.5</spt-development-test.version>
 
         <!-- Test dependency versions, matched to Spring Boot -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -62,13 +62,13 @@
         <!-- Plugin versions -->
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
         <checkstyle-maven-plugin.version>3.3.1</checkstyle-maven-plugin.version>
-        <dependency-check-maven.version>9.0.9</dependency-check-maven.version>
+        <dependency-check-maven.version>9.0.10</dependency-check-maven.version>
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
         <license-maven-plugin.version>2.4.0</license-maven-plugin.version>
-        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-        <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.2.1</maven-gpg-plugin.version>
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
         <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
@@ -82,7 +82,7 @@
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
 
         <!-- Plugin dependencies -->
-        <checkstyle.version>10.14.0</checkstyle.version>
+        <checkstyle.version>10.14.2</checkstyle.version>
         <findbugs-slf4j-bug-pattern.version>1.5.0</findbugs-slf4j-bug-pattern.version>
         <findbugs-sec-bug-pattern.version>1.12.0</findbugs-sec-bug-pattern.version>
         <pitest-junit5-plugin.version>1.2.1</pitest-junit5-plugin.version>
