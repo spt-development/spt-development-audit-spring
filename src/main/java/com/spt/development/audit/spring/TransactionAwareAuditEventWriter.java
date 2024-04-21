@@ -112,7 +112,7 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
 
         @Override
         public void afterCompletion(int status) {
-            if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+            if (status == STATUS_ROLLED_BACK) {
                 info("Transaction was rolled back, discarding audit event: {}", auditEvent);
             }
         }

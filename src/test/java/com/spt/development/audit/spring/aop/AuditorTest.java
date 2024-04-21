@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 class AuditorTest {
     private static final Gson GSON = new GsonBuilder().create();
 
-    private static class TestData {
+    private static final class TestData {
         static final String APP_NAME = "Test Application";
         static final String VERSION = "v1.0.0";
         static final String CORRELATION_ID = "b3015502-3b43-4012-95c2-1021f0aa9da9";
@@ -714,7 +714,7 @@ class AuditorTest {
         }
     }
 
-    private static class TestTarget {
+    private static final class TestTarget {
 
         @Audited(type = TestData.TYPE, subType = TestData.SUB_TYPE)
         public String test() {
