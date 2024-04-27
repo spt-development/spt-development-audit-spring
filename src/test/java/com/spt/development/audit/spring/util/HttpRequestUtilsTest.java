@@ -15,7 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
 class HttpRequestUtilsTest {
-    private static class TestData {
+    private static final class TestData {
         static final String IP_ADDRESS = "127.1.1.127";
         static final String REMOTE_ADDRESS = "271.1.1.271";
     }

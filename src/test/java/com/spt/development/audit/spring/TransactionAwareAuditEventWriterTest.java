@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 class TransactionAwareAuditEventWriterTest {
     private static final Gson GSON = new GsonBuilder().create();
 
-    private static class TestData {
+    private static final class TestData {
         static final String TYPE = "APPLICATION";
         static final String SUB_TYPE = "UPDATE";
         static final String CORRELATION_ID = "30f6f97d-6956-485b-b7e7-a6c689a3d6dd";

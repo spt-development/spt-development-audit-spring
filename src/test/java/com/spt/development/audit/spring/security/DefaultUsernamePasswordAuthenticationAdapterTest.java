@@ -12,7 +12,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class DefaultUsernamePasswordAuthenticationAdapterTest {
-    private static class TestData {
+    private static final class TestData {
         static final String PRINCIPAL = "Test principle";
     }
 
@@ -52,7 +52,7 @@ class DefaultUsernamePasswordAuthenticationAdapterTest {
         return new DefaultUsernamePasswordAuthenticationAdapter(principal);
     }
 
-    private static class TestUserDetails implements UserDetails {
+    private static final class TestUserDetails implements UserDetails {
         static final long serialVersionUID = 1L;
 
         @Override
