@@ -70,6 +70,11 @@
         </rule>
 
         <!-- Test dependencies aligned with Spring Boot -->
+        <rule groupId="org.hamcrest" artifactId="hamcrest" comparisonMethod="maven">
+            <ignoreVersions>
+                <ignoreVersion type="regex">.*</ignoreVersion>
+            </ignoreVersions>
+        </rule>
         <rule groupId="org.junit" artifactId="junit-bom" comparisonMethod="maven">
             <ignoreVersions>
                 <ignoreVersion type="regex">.*</ignoreVersion>

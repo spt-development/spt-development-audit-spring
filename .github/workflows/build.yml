@@ -27,7 +27,7 @@ jobs:
           release: 22
 
       - name: Run Maven
-        run: ./mvnw clean install -Pall-quality-gates -B
+        run: ./mvnw clean install -U -Pall-quality-gates -B
 
   release:
     runs-on: ubuntu-latest
