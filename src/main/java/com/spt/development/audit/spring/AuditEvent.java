@@ -22,17 +22,17 @@ import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuditEvent {
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(
-                    OffsetDateTime.class,
-                    (JsonSerializer<OffsetDateTime>) (src, typeOfSrc, context) ->
-                            new JsonPrimitive(ISO_OFFSET_DATE_TIME.format(src))
-            )
-            .registerTypeAdapter(
-                    OffsetDateTime.class,
-                    (JsonDeserializer<OffsetDateTime>) (json, typeOfT, context) ->
-                            ISO_OFFSET_DATE_TIME.parse(json.getAsString(), OffsetDateTime::from)
-            )
-            .create();
+        .registerTypeAdapter(
+            OffsetDateTime.class,
+            (JsonSerializer<OffsetDateTime>) (src, typeOfSrc, context) ->
+                new JsonPrimitive(ISO_OFFSET_DATE_TIME.format(src))
+        )
+        .registerTypeAdapter(
+            OffsetDateTime.class,
+            (JsonDeserializer<OffsetDateTime>) (json, typeOfT, context) ->
+                ISO_OFFSET_DATE_TIME.parse(json.getAsString(), OffsetDateTime::from)
+        )
+        .create();
 
     String type;
     String subType;
