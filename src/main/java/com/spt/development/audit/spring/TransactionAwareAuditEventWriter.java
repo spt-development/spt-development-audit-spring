@@ -31,8 +31,8 @@ public abstract class TransactionAwareAuditEventWriter implements AuditEventWrit
      * @param correlationIdProvider provider for getting the current correlationId.
      */
     protected TransactionAwareAuditEventWriter(
-            final boolean includeCorrelationIdInLogs,
-            final CorrelationIdProvider correlationIdProvider) {
+        final boolean includeCorrelationIdInLogs,
+        final CorrelationIdProvider correlationIdProvider) {
         this(includeCorrelationIdInLogs, correlationIdProvider, new TransactionSyncManFacade());
     }
 
