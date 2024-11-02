@@ -145,10 +145,8 @@ public class Auditor {
      * annotation, however there is nothing in the implementation that prevents other methods being annotated with the
      * {@link Audited} annotation.
      *
-     * <p>
-     * For details of usage, see the
-     * <a href="https://github.com/spt-development/spt-development-test/blob/main/README.md">README</a>.
-     * </p>
+     * <p>For details of usage, see the
+     * <a href="https://github.com/spt-development/spt-development-test/blob/main/README.md">README</a>.</p>
      *
      * @param point the aspect join point required for implementing a {@link Around} aspect.
      *
